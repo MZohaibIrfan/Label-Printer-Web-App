@@ -20,8 +20,22 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  const removeFromCart = (item) => {
-    setCart(prevCart => prevCart.filter(cartItem => cartItem.id !== item.id));
+  const removeFromCart = (item, quantity) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
+      if (existingItem) {
+        if (existingItem.quantity > quantity) {
+          return prevCart.map(cartItem =>
+            cartItem.id === item.id
+              ? { ...cartItem, quantity: cartItem.quantity - quantity }
+              : cartItem
+          );
+        } else {
+          return prevCart.filter(cartItem => cartItem.id !== item.id);
+        }
+      }
+      return prevCart;
+    });
   };
 
   const clearCart = () => {
