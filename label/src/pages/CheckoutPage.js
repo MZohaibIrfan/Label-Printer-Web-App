@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { CartContext } from '../contexts/CartContext';
-import CheckoutForm from '../components/CheckoutForm'; // Adjust the path as needed
+import CheckoutForm from '../components/CheckoutForm';
 
 function CheckoutPage() {
   const { cart, clearCart } = useContext(CartContext);
@@ -8,22 +8,44 @@ function CheckoutPage() {
   const handleOrder = () => {
     const order = {
       items: JSON.stringify(cart),
-      total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0) // Updated to include quantity
+      total: cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
     };
 
-    fetch('http://127.0.0.1:5000/api/orders/add', { // Updated URL
+    fetch('http://127.0.0.1:5000/api/orders/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(order),
     })
-    .then(response => response.text())
-    .then(data => {
-      clearCart();
-      alert('Order placed successfully!');
+      .then(response => response.json())
+      .then(data => {
+        clearCart();
+        alert('Order placed successfully!');
+        printReceipt(data.order_id);
+      })
+      .catch(error => console.error('Error:', error));
+  };
+
+  const printReceipt = (orderId) => {
+    const printData = `
+      <initialization/>
+      <text>Order ID: ${orderId}\n</text>
+      <cutpaper/>
+    `;
+
+    fetch('http://192.168.62.213/WebPRNT', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      body: printData,
     })
-    .catch(error => console.error('Error:', error));
+      .then(response => response.text())
+      .then(data => {
+        console.log('Print Success:', data);
+      })
+      .catch(error => console.error('Print Error:', error));
   };
 
   return (
