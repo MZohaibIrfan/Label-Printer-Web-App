@@ -9,4 +9,4 @@ function AddToCartButton({ item }) {
   );
 }
 
-export default AddToCartButton; 
+export default AddToCartButton;
