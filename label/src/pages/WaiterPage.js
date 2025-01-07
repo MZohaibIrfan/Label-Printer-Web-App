@@ -72,6 +72,7 @@ function WaiterPage({ setIsAuthenticated }) {
             const completedOrder = pendingOrders.find(order => order[0] === orderId);
             if (completedOrder) {
                 completedOrder[4] = 'completed';  // Update the status to 'completed'
+                completedOrder[6] = new Date().toISOString();  // Add served timestamp
                 setCompletedOrders([...completedOrders, completedOrder]);
             }
         } else {
@@ -91,6 +92,12 @@ function WaiterPage({ setIsAuthenticated }) {
             console.error('Failed to parse items:', error);
             return [];
         }
+    };
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' });
     };
 
     const styles = {
@@ -153,9 +160,11 @@ function WaiterPage({ setIsAuthenticated }) {
                 <thead>
                     <tr>
                         <th style={styles.th}>Order ID</th>
+                        <th style={styles.th}>Table Number</th>
                         <th style={styles.th}>Items</th>
                         <th style={styles.th}>Total</th>
                         <th style={styles.th}>Status</th>
+                        <th style={styles.th}>Timestamp</th> {/* New column for timestamp */}
                         <th style={styles.th}>Action</th>
                     </tr>
                 </thead>
@@ -163,6 +172,7 @@ function WaiterPage({ setIsAuthenticated }) {
                     {pendingOrders.map(order => (
                         <tr key={order[0]}>
                             <td style={styles.td}>{order[0]}</td>
+                            <td style={styles.td}>{order[4]}</td> {/* Display table number */}
                             <td style={styles.td}>
                                 <ul style={styles.itemList}>
                                     {parseItems(order[1]).map((item, index) => (
@@ -174,6 +184,7 @@ function WaiterPage({ setIsAuthenticated }) {
                             </td>
                             <td style={styles.td}>${order[2]}</td>
                             <td style={styles.td}>{order[3]}</td>
+                            <td style={styles.td}>{formatTimestamp(order[5])}</td> {/* Display timestamp */}
                             <td style={styles.td}>
                                 <button style={styles.button} onClick={() => handleCompleteOrder(order[0])}>Complete</button>
                             </td>
@@ -187,15 +198,18 @@ function WaiterPage({ setIsAuthenticated }) {
                 <thead>
                     <tr>
                         <th style={styles.th}>Order ID</th>
+                        <th style={styles.th}>Table Number</th>
                         <th style={styles.th}>Items</th>
                         <th style={styles.th}>Total</th>
                         <th style={styles.th}>Status</th>
+                        <th style={styles.th}>Timestamps</th> {/* New column for timestamps */}
                     </tr>
                 </thead>
                 <tbody>
                     {completedOrders.map(order => (
                         <tr key={order[0]}>
                             <td style={styles.td}>{order[0]}</td>
+                            <td style={styles.td}>{order[4]}</td> {/* Display table number */}
                             <td style={styles.td}>
                                 <ul style={styles.itemList}>
                                     {parseItems(order[1]).map((item, index) => (
@@ -207,6 +221,10 @@ function WaiterPage({ setIsAuthenticated }) {
                             </td>
                             <td style={styles.td}>${order[2]}</td>
                             <td style={styles.td}>{order[3]}</td>
+                            <td style={styles.td}>
+                                Placed: {formatTimestamp(order[5])}<br />
+                                Served: {formatTimestamp(order[6])} {/* Display both timestamps */}
+                            </td>
                         </tr>
                     ))}
                 </tbody>

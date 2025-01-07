@@ -8,14 +8,14 @@ function CashierPage({ setIsAuthenticated }) {
 
     useEffect(() => {
         const role = localStorage.getItem('role');
-        console.log('Role:', role);  // Debugging: Log the role
-        if (role !== 'cashier') {
+        const token = localStorage.getItem('token');
+
+        if (role !== 'cashier' || !token) {
             navigate('/login');
             return;
         }
 
         const fetchCompletedOrders = async () => {
-            const token = localStorage.getItem('token');
             const response = await fetch('http://127.0.0.1:5000/api/orders/completed', {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -37,40 +37,35 @@ function CashierPage({ setIsAuthenticated }) {
     }, [navigate]);
 
     const handlePrintReceipt = async (orderId, items, total) => {
-        try {
-            const response = await fetch(`http://127.0.0.1:5000/api/orders/${orderId}/receipt`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ items, total })
-            });
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://127.0.0.1:5000/api/orders/${orderId}/print_receipt`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ items, total })
+        });
 
-            if (response.ok) {
-                const { receiptPath } = await response.json();
-                window.open(receiptPath, '_blank');  // Open the receipt in a new tab
-            } else {
-                alert('Failed to generate receipt');
-            }
-        } catch (error) {
-            console.error('Error generating receipt:', error);
-            alert('Error generating receipt');
+        if (response.ok) {
+            alert('Receipt printed successfully');
+        } else {
+            alert('Failed to print receipt');
         }
     };
 
     const parseItems = (items) => {
         try {
-            if (Array.isArray(items)) {
-                return items;
-            } else {
-                console.error('Items is not an array:', items);
-                return [];
-            }
+            return JSON.parse(items);
         } catch (error) {
-            console.error('Failed to parse items:', error);
+            console.error('Error parsing items:', error);
             return [];
         }
+    };
+
+    const formatTimestamp = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        const date = new Date(timestamp);
+        return date.toLocaleString('en-US', { timeZone: 'Asia/Hong_Kong' });
     };
 
     const styles = {
@@ -133,9 +128,11 @@ function CashierPage({ setIsAuthenticated }) {
                 <thead>
                     <tr>
                         <th style={styles.th}>Order ID</th>
+                        <th style={styles.th}>Table Number</th>
                         <th style={styles.th}>Items</th>
                         <th style={styles.th}>Total</th>
                         <th style={styles.th}>Status</th>
+                        <th style={styles.th}>Timestamps</th> {/* New column for timestamps */}
                         <th style={styles.th}>Action</th>
                     </tr>
                 </thead>
@@ -143,9 +140,10 @@ function CashierPage({ setIsAuthenticated }) {
                     {completedOrders.map(order => (
                         <tr key={order[0]}>
                             <td style={styles.td}>{order[0]}</td>
+                            <td style={styles.td}>{order[4]}</td> {/* Display table number */}
                             <td style={styles.td}>
                                 <ul style={styles.itemList}>
-                                    {parseItems(order[1]).map((item, index) => (
+                                    {order[1].map((item, index) => (
                                         <li key={index} style={styles.item}>
                                             {item.name} - ${item.price} x {item.quantity} = ${item.price * item.quantity}
                                         </li>
@@ -154,6 +152,10 @@ function CashierPage({ setIsAuthenticated }) {
                             </td>
                             <td style={styles.td}>${order[2]}</td>
                             <td style={styles.td}>{order[3]}</td>
+                            <td style={styles.td}>
+                                Placed: {formatTimestamp(order[5])}<br />
+                                Served: {order[6] ? formatTimestamp(order[6]) : 'N/A'} {/* Display both timestamps */}
+                            </td>
                             <td style={styles.td}>
                                 <button style={styles.button} onClick={() => handlePrintReceipt(order[0], order[1], order[2])}>Print Receipt</button>
                             </td>
